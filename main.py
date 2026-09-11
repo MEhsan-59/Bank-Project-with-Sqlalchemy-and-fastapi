@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+import uuid
 from logger_setup import logger
 from schema import (
     CreateAccountResponse, CreateAccountSchema,
     LoginAccountSchema, TokenResponse, ProfileResponse,
-    CheckBalanceResponse, DepositSechema, DepositResponse
+    CheckBalanceResponse, DepositSechema, DepositResponse,
+    SendMoneySchema, SendMoneyPreviewResponse, ConfirmTransferSchema
 )
 from account_manager import AccountManager
 from account_repository import AccountRepository
@@ -16,8 +18,9 @@ from transaction_repository import TransactionRepository
 from statement_manager import Statement
 from statement_repository import StatmentRepository
 
-app = FastAPI(title="Bank Manager API", version="3.0")
+app = FastAPI(title="Bank Manager API", version="4.0")
 security_scheme = HTTPBearer()
+pending_transfers = {}
 
 
 def get_account_manager(db: Session = Depends(get_db)) -> AccountManager:
@@ -104,3 +107,60 @@ def deposit(
         raise HTTPException(status_code=400, detail=message)
 
     return {"success": status, "message": message, "balance": new_balance}
+
+
+@app.post("/send-money/preview", response_model=SendMoneyPreviewResponse)
+def send_money_preview(
+    data: SendMoneySchema,
+    current_user=Depends(get_current_user),
+    manager: AccountManager = Depends(get_account_manager)
+):
+    logger.info("API : Send Money Preview")
+    receiver = manager.account_repo.get_account_by_account_no(data.receiver_account_no)
+    if not receiver:
+        logger.warning("Receiver account not found.")
+        raise HTTPException(status_code=404, detail="Receiver account not found.")
+
+    if current_user.balance < data.amount:
+        raise HTTPException(status_code=400, detail="Insufficient balance.")
+
+    transaction_id = str(uuid.uuid4())
+    pending_transfers[transaction_id] = {
+        "sender_user_id": current_user.user_id,
+        "receiver_account_no": data.receiver_account_no,
+        "amount": data.amount
+    }
+
+    return {
+        "receiver_account_no": receiver.account_no,
+        "receiver_name": receiver.user_name,
+        "amount": data.amount,
+        "transaction_id": transaction_id
+    }
+
+
+@app.post("/send-money/confirm")
+def send_money_confirm(
+    data: ConfirmTransferSchema,
+    current_user=Depends(get_current_user),
+    transaction_manager: TransactionManager = Depends(get_transaction_manager)
+):
+    logger.info("API : Send money confirm.")
+    pending = pending_transfers.get(data.transaction_id)
+
+    if not pending:
+        logger.warning("Transaction id not found or already used.")
+        raise HTTPException(status_code=404, detail="Transaction not found or already used.")
+
+    if pending["sender_user_id"] != current_user.user_id:
+        logger.warning("This transaction does belong to you.")
+        raise HTTPException(status_code=403, detail="This transaction does not belong to you.")
+
+    status, message = transaction_manager.send_money(
+        current_user,
+        pending["receiver_account_no"],
+        pending["amount"],
+    )
+    del pending_transfers[data.transaction_id]
+
+    return {"success": status, "message": message}

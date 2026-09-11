@@ -79,3 +79,52 @@ def test_deposit_endpoint_rejects_too_large_amount(client):
     )
 
     assert response.status_code == 400
+
+def test_send_money_preview_and_confirm(client):
+    sender_token = _login_and_get_token(client, "ihsan", "1234")
+
+    client.post("/create_account", json={
+        "user_id": "jalal",
+        "user_name": "M. Jalal",
+        "password": "5678"
+    })
+
+    client.post(
+        "/deposit",
+        json={"amount": 1000},
+        headers={"Authorization": f"Bearer {sender_token}"}
+    )
+
+    preview = client.post(
+        "/send-money/preview",
+        json={"receiver_account_no": "AC4001", "amount": 300},
+        headers={"Authorization": f"Bearer {sender_token}"}
+    )
+    assert preview.status_code == 200
+    transaction_id = preview.json()["transaction_id"]
+
+    confirm = client.post(
+        "/send-money/confirm",
+        json={"transaction_id": transaction_id},
+        headers={"Authorization": f"Bearer {sender_token}"}
+    )
+    assert confirm.status_code == 200
+    assert confirm.json()["success"] is True
+
+    balance_response = client.get("/check_balance", headers={"Authorization": f"Bearer {sender_token}"})
+    assert balance_response.json()["balance"] == 700
+
+def test_send_money_preview_insufficient_balance(client):
+    sender_token = _login_and_get_token(client, "ihsan", "1234")
+    client.post("/create_account", json={
+        "user_id": "jalal",
+        "user_name": "M. Jalal",
+        "password": "5678"
+    })
+
+    preview = client.post(
+        "/send-money/preview",
+        json={"receiver_account_no": "AC4001", "amount": 300},
+        headers={"Authorization": f"Bearer {sender_token}"}
+    )
+    assert preview.status_code == 400

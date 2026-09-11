@@ -29,3 +29,35 @@ class TransactionManager:
         self.statement_repo.log_deposit(account_no, amount, balance + amount)
         logger.info(f"{amount} successfuly deposited Your total amount is {balance+amount}.")
         return True, f"{amount} successfuly deposited Your total amount is {balance+amount}.", balance + amount
+
+    def send_money(self, current_user, receiver_account_no, amount):
+        sender = self.account_repo.check_account_exists(current_user.user_id, current_user.password, True)
+        receiver = self.account_repo.get_account_by_account_no(receiver_account_no)
+
+        if not receiver:
+            logger.warning("Receiver account not found.")
+            return False, "Receiver account not found."
+
+        if current_user.account_no == receiver_account_no:
+            logger.warning("You cannot send money to your own account.")
+            return False, "You cannot send money to your own account."
+
+        if amount <= 0:
+            logger.warning("Amount must be greater than zero.")
+            return False, "Amount must be greater than zero."
+
+        if sender.balance < amount:
+            logger.warning("Insufficient balance.")
+            return False, "Insufficient balance."
+
+        sender_balance_after = sender.balance - amount
+        receiver_balance_after = receiver.balance + amount
+
+        self.transaction_repo.transfer_money(sender.account_no, receiver.account_no, amount)
+        self.statement_repo.log_transfer(
+            sender.account_no, receiver.account_no, amount,
+            sender_balance_after, receiver_balance_after
+        )
+
+        logger.info("Money transfered successfully.")
+        return True, "Money transferred successfully."

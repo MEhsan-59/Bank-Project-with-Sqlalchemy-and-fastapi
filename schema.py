@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class CreateAccountSchema(BaseModel):
     user_id: str
@@ -34,3 +34,16 @@ class DepositResponse(BaseModel):
 
 class DepositSechema(BaseModel):
     amount: int
+
+class SendMoneySchema(BaseModel):
+    receiver_account_no: str = Field(..., min_length=6)
+    amount: int = Field(..., gt=0)
+
+class SendMoneyPreviewResponse(BaseModel):
+    receiver_account_no: str
+    receiver_name: str
+    amount: int
+    transaction_id: str
+
+class ConfirmTransferSchema(BaseModel):
+    transaction_id: str

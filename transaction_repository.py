@@ -12,3 +12,12 @@ class TransactionRepository:
         )
         self.db.commit()
         return result > 0
+
+    def transfer_money(self, sender_no, receiver_no, amount):
+        sender = self.db.query(Account).filter_by(account_no=sender_no).with_for_update().first()
+        receiver = self.db.query(Account).filter_by(account_no=receiver_no).with_for_update().first()
+
+        if sender and receiver:
+            sender.balance -= amount
+            receiver.balance += amount
+            self.db.commit()
