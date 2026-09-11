@@ -33,6 +33,11 @@ class AccountRepository:
             return None
         return account
 
+    def get_account_by_id(self, user_id):
+        return self.db.query(Account).filter(
+            Account.user_id == user_id
+        ).first()
+
     def generate_account_number(self):
         STARTING_NUMBER = 4000
         last_row = (self.db.query(Account).order_by(Account.account_no.desc()).first())

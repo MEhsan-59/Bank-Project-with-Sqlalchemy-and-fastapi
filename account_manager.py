@@ -23,3 +23,19 @@ class AccountManager:
 
         logger.warning("Account creation failed.")
         return False, "Account creation failed."
+
+    def login_account(self, user_id, password):
+        account = self.account_repo.check_account_exists(user_id, password)
+        if not account:
+            logger.warning("Account not exists.")
+            return False, "Account not exists."
+
+        logger.info("Account login successfully.")
+        return True, "Account login successfully."
+
+    def get_account_by_id(self, user_id):
+        account = self.account_repo.get_account_by_id(user_id)
+        if not account:
+            logger.warning("Invalid user id no account found.")
+            return False, "Invalid user id no account found.", account
+        return True, "Account found.", account

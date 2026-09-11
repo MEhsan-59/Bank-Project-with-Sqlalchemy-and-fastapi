@@ -2,9 +2,11 @@
 
 A layered banking API built with **FastAPI**, **SQLAlchemy**, and **Pydantic**.
 
-## Current Status (v1)
+## Current Status (v2)
 
 - `POST /create_account` — create a new bank account (passwords are bcrypt-hashed, account numbers auto-generated)
+- `POST /login_account` — log in and receive a JWT access token
+- `GET /me` — get the logged-in user's profile (requires `Authorization: Bearer <token>`)
 
 ## Quick Start
 
@@ -66,7 +68,6 @@ pytest
 
 ## Roadmap
 
-- Login with JWT authentication
 - Check balance and deposit
 - Send money between accounts
 - Change password

@@ -30,3 +30,11 @@ def test_check_account_exists_with_wrong_password(account_repo):
     account_repo.create_account("ihsan", "M. Ihsan", "1234")
 
     assert account_repo.check_account_exists("ihsan", "wrong") is None
+
+def test_get_account_by_id_found(account_repo):
+    account_repo.create_account("ihsan", "M. Ihsan", "1234")
+
+    assert account_repo.get_account_by_id("ihsan") is not None
+
+def test_get_account_by_id_not_found(account_repo):
+    assert account_repo.get_account_by_id("ghost") is None
