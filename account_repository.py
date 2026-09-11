@@ -1,0 +1,47 @@
+from models import Account
+from sqlalchemy.orm import Session
+import security
+
+
+class AccountRepository:
+
+    def __init__(self, database=Session):
+        self.db = database
+
+    def create_account(self, user_id, user_name, password):
+        hash_password = security.SecurityHelper.hash_password(password)
+        account_no = self.generate_account_number()
+        account = Account(
+            user_id=user_id,
+            user_name=user_name,
+            password=hash_password,
+            account_no=account_no
+        )
+        self.db.add(account)
+        self.db.commit()
+        self.db.refresh(account)
+
+        return account
+
+    def check_account_exists(self, user_id, password=None, skip_password_check=False):
+        account = self.db.query(Account).filter(Account.user_id == user_id).first()
+        if not account:
+            return None
+        if skip_password_check or password is None:
+            return account
+        if not security.SecurityHelper.verify_password(password, account.password):
+            return None
+        return account
+
+    def generate_account_number(self):
+        STARTING_NUMBER = 4000
+        last_row = (self.db.query(Account).order_by(Account.account_no.desc()).first())
+        if last_row is None:
+            next_number = STARTING_NUMBER
+        else:
+            last_account_number = last_row.account_no
+            numeric_part = int(last_account_number[2:])
+            next_number = numeric_part + 1
+
+        new_account_number = f"AC{next_number:04d}"
+        return new_account_number
