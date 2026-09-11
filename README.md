@@ -2,11 +2,13 @@
 
 A layered banking API built with **FastAPI**, **SQLAlchemy**, and **Pydantic**.
 
-## Current Status (v2)
+## Current Status (v3)
 
 - `POST /create_account` — create a new bank account (passwords are bcrypt-hashed, account numbers auto-generated)
 - `POST /login_account` — log in and receive a JWT access token
 - `GET /me` — get the logged-in user's profile (requires `Authorization: Bearer <token>`)
+- `GET /check_balance` — view your current balance
+- `POST /deposit` — deposit money into your own account (max 10,000 per deposit)
 
 ## Quick Start
 
@@ -68,7 +70,6 @@ pytest
 
 ## Roadmap
 
-- Check balance and deposit
 - Send money between accounts
 - Change password
 - Transaction statements

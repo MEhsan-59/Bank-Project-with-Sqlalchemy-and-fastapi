@@ -17,6 +17,10 @@ from sqlalchemy.pool import StaticPool
 from models import Base
 from account_repository import AccountRepository
 from account_manager import AccountManager
+from transaction_repository import TransactionRepository
+from statement_repository import StatmentRepository
+from statement_manager import Statement
+from transaction_manager import TransactionManager
 
 
 @pytest.fixture()
@@ -40,6 +44,26 @@ def account_repo(db_session):
 @pytest.fixture()
 def account_manager(account_repo):
     return AccountManager(account_repo)
+
+
+@pytest.fixture()
+def transaction_repo(db_session):
+    return TransactionRepository(db_session)
+
+
+@pytest.fixture()
+def statement_repo(db_session):
+    return StatmentRepository(db_session)
+
+
+@pytest.fixture()
+def statement_manager(statement_repo):
+    return Statement(statement_repo)
+
+
+@pytest.fixture()
+def transaction_manager(transaction_repo, account_repo, statement_manager):
+    return TransactionManager(transaction_repo, account_repo, statement_manager)
 
 
 @pytest.fixture()

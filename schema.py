@@ -22,3 +22,15 @@ class ProfileResponse(BaseModel):
     account_no: str
     name: str
     balance: float
+
+class CheckBalanceResponse(BaseModel):
+    success: bool
+    balance: float
+
+class DepositResponse(BaseModel):
+    success: bool
+    message: str
+    balance: float
+
+class DepositSechema(BaseModel):
+    amount: int

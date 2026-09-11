@@ -4,20 +4,36 @@ from sqlalchemy.orm import Session
 from logger_setup import logger
 from schema import (
     CreateAccountResponse, CreateAccountSchema,
-    LoginAccountSchema, TokenResponse, ProfileResponse
+    LoginAccountSchema, TokenResponse, ProfileResponse,
+    CheckBalanceResponse, DepositSechema, DepositResponse
 )
 from account_manager import AccountManager
 from account_repository import AccountRepository
 from database import get_db
 from auth import decode_access_token, create_access_token
+from transaction_manager import TransactionManager
+from transaction_repository import TransactionRepository
+from statement_manager import Statement
+from statement_repository import StatmentRepository
 
-app = FastAPI(title="Bank Manager API", version="2.0")
+app = FastAPI(title="Bank Manager API", version="3.0")
 security_scheme = HTTPBearer()
 
 
 def get_account_manager(db: Session = Depends(get_db)) -> AccountManager:
     repo = AccountRepository(db)
     return AccountManager(repo)
+
+
+def get_statement_manager(db: Session = Depends(get_db)) -> Statement:
+    repo = StatmentRepository(db)
+    return Statement(repo)
+
+
+def get_transaction_manager(db: Session = Depends(get_db)) -> TransactionManager:
+    transaction_repo = TransactionRepository(db)
+    account_repo = AccountRepository(db)
+    return TransactionManager(transaction_repo, account_repo, get_statement_manager(db))
 
 
 def get_current_user(
@@ -65,3 +81,26 @@ def get_profile(current_user=Depends(get_current_user)):
         "name": current_user.user_name,
         "balance": current_user.balance
     }
+
+
+@app.get("/check_balance", response_model=CheckBalanceResponse)
+def check_balance(
+    current_user=Depends(get_current_user)):
+    logger.info("API : Check Balance.")
+    return {"success": True, "balance": current_user.balance}
+
+
+@app.post("/deposit", response_model=DepositResponse)
+def deposit(
+    data: DepositSechema,
+    current_user=Depends(get_current_user),
+    transaction_manager: TransactionManager = Depends(get_transaction_manager)
+):
+    logger.info("API : Deposit")
+    status, message, new_balance = transaction_manager.deposit(current_user.account_no, current_user.balance, data.amount, current_user.user_id)
+
+    if not status:
+        logger.warning(message)
+        raise HTTPException(status_code=400, detail=message)
+
+    return {"success": status, "message": message, "balance": new_balance}
