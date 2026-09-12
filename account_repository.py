@@ -43,6 +43,14 @@ class AccountRepository:
             Account.account_no == account_no
         ).first()
 
+    def update_password(self, user_id, new_hashed_password):
+        account = self.db.query(Account).filter(Account.user_id == user_id).first()
+        if not account:
+            return False
+        account.password = new_hashed_password
+        self.db.commit()
+        return True
+
     def generate_account_number(self):
         STARTING_NUMBER = 4000
         last_row = (self.db.query(Account).order_by(Account.account_no.desc()).first())

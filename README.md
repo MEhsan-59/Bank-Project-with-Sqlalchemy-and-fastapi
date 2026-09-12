@@ -2,7 +2,7 @@
 
 A layered banking API built with **FastAPI**, **SQLAlchemy**, and **Pydantic**.
 
-## Current Status (v4)
+## Current Status (v5)
 
 - `POST /create_account` — create a new bank account (passwords are bcrypt-hashed, account numbers auto-generated)
 - `POST /login_account` — log in and receive a JWT access token
@@ -11,6 +11,7 @@ A layered banking API built with **FastAPI**, **SQLAlchemy**, and **Pydantic**.
 - `POST /deposit` — deposit money into your own account (max 10,000 per deposit)
 - `POST /send-money/preview` — preview a transfer to another account (returns a `transaction_id`)
 - `POST /send-money/confirm` — confirm a previewed transfer using its `transaction_id`
+- `POST /change_password` — change your account password
 
 ## Quick Start
 

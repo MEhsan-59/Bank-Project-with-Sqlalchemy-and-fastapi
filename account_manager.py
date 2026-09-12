@@ -1,4 +1,5 @@
 from logger_setup import logger
+import security
 
 class AccountManager:
 
@@ -39,3 +40,15 @@ class AccountManager:
             logger.warning("Invalid user id no account found.")
             return False, "Invalid user id no account found.", account
         return True, "Account found.", account
+
+    def change_password(self, user_id, current_hashed_password, old_pass, new_pass, confirm_pass):
+        if not security.SecurityHelper.verify_password(old_pass, current_hashed_password):
+            logger.warning("Old password does not match.")
+            return False, "Old password does not match."
+        if new_pass != confirm_pass:
+            logger.warning("New password and confirm password do not match.")
+            return False, "New password and confirm password do not match."
+        hashed_new = security.SecurityHelper.hash_password(new_pass)
+        self.account_repo.update_password(user_id, hashed_new)
+        logger.info("Password successfully changed for user: %s", user_id)
+        return True, "Password successfully changed."

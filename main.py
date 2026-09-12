@@ -7,7 +7,8 @@ from schema import (
     CreateAccountResponse, CreateAccountSchema,
     LoginAccountSchema, TokenResponse, ProfileResponse,
     CheckBalanceResponse, DepositSechema, DepositResponse,
-    SendMoneySchema, SendMoneyPreviewResponse, ConfirmTransferSchema
+    SendMoneySchema, SendMoneyPreviewResponse, ConfirmTransferSchema,
+    Change_password_Schema, ChangePasswordResponse
 )
 from account_manager import AccountManager
 from account_repository import AccountRepository
@@ -18,7 +19,7 @@ from transaction_repository import TransactionRepository
 from statement_manager import Statement
 from statement_repository import StatmentRepository
 
-app = FastAPI(title="Bank Manager API", version="4.0")
+app = FastAPI(title="Bank Manager API", version="5.0")
 security_scheme = HTTPBearer()
 pending_transfers = {}
 
@@ -163,4 +164,20 @@ def send_money_confirm(
     )
     del pending_transfers[data.transaction_id]
 
+    return {"success": status, "message": message}
+
+
+@app.post("/change_password", response_model=ChangePasswordResponse)
+def change_password(
+    data: Change_password_Schema,
+    current_user=Depends(get_current_user),
+    manager: AccountManager = Depends(get_account_manager)):
+    logger.info("API: Change Password")
+    status, message = manager.change_password(
+        current_user.user_id,
+        current_user.password,
+        data.old_password,
+        data.new_password,
+        data.confirm_password
+    )
     return {"success": status, "message": message}

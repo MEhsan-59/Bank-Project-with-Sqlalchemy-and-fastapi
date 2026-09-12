@@ -128,3 +128,20 @@ def test_send_money_preview_insufficient_balance(client):
         headers={"Authorization": f"Bearer {sender_token}"}
     )
     assert preview.status_code == 400
+
+def test_change_password_endpoint_and_relogin(client):
+    token = _login_and_get_token(client, "ihsan", "1234")
+
+    response = client.post(
+        "/change_password",
+        json={"old_password": "1234", "new_password": "5678", "confirm_password": "5678"},
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+
+    old_login = client.post("/login_account", json={"user_id": "ihsan", "password": "1234"})
+    assert old_login.status_code == 401
+
+    new_login = client.post("/login_account", json={"user_id": "ihsan", "password": "5678"})
+    assert new_login.status_code == 200
