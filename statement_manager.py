@@ -13,3 +13,9 @@ class Statement:
                                    sender_balance_after, receiver_account_no)
         self.repo.log_transaction(receiver_account_no, "transfer_in", amount,
                                    receiver_balance_after, sender_account_no)
+
+    def get_history(self, account_no):
+        return self.repo.get_history(account_no)
+
+    def get_top_5_history(self, account_no):
+        return self.repo.get_top_5_history(account_no)

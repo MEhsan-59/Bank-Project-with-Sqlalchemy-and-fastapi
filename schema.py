@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional, List
+from datetime import datetime
 
 class CreateAccountSchema(BaseModel):
     user_id: str
@@ -56,3 +58,15 @@ class Change_password_Schema(BaseModel):
 class ChangePasswordResponse(BaseModel):
     success: bool
     message: str
+
+class TransactionItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    type: str
+    amount: float
+    balance_after: float
+    related_account: Optional[str] = None
+    created_at: datetime
+
+class StatementResponse(BaseModel):
+    transactions: List[TransactionItem]

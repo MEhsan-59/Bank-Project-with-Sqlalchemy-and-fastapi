@@ -17,3 +17,15 @@ class StatmentRepository:
         self.db.commit()
         self.db.refresh(transaction)
         return transaction
+
+    def get_history(self, account_no, limit=20):
+        return (
+            self.db.query(Transaction)
+            .filter(Transaction.account_no == account_no)
+            .order_by(Transaction.id.desc())
+            .limit(limit)
+            .all()
+        )
+
+    def get_top_5_history(self, account_no, limit=5):
+        return self.get_history(account_no, limit=limit)

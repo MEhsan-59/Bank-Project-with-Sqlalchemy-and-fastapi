@@ -8,7 +8,8 @@ from schema import (
     LoginAccountSchema, TokenResponse, ProfileResponse,
     CheckBalanceResponse, DepositSechema, DepositResponse,
     SendMoneySchema, SendMoneyPreviewResponse, ConfirmTransferSchema,
-    Change_password_Schema, ChangePasswordResponse
+    Change_password_Schema, ChangePasswordResponse,
+    TransactionItem, StatementResponse
 )
 from account_manager import AccountManager
 from account_repository import AccountRepository
@@ -19,7 +20,7 @@ from transaction_repository import TransactionRepository
 from statement_manager import Statement
 from statement_repository import StatmentRepository
 
-app = FastAPI(title="Bank Manager API", version="5.0")
+app = FastAPI(title="Bank Manager API", version="6.0")
 security_scheme = HTTPBearer()
 pending_transfers = {}
 
@@ -181,3 +182,21 @@ def change_password(
         data.confirm_password
     )
     return {"success": status, "message": message}
+
+@app.get("/statements", response_model=StatementResponse)
+def get_statements(
+    current_user=Depends(get_current_user),
+    get_statement_manager: Statement = Depends(get_statement_manager)):
+
+    logger.info(f"API : Get statements for user {current_user.user_id}")
+    history = get_statement_manager.get_history(current_user.account_no)
+    return {"transactions": history}
+
+@app.get("/mini-statements", response_model=StatementResponse)
+def get_mini_statements(
+    current_user=Depends(get_current_user),
+    get_statement_manager: Statement = Depends(get_statement_manager)):
+
+    logger.info(f"API : Get mini statements for user {current_user.user_id}")
+    history = get_statement_manager.get_top_5_history(current_user.account_no)
+    return {"transactions": history}

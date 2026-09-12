@@ -145,3 +145,40 @@ def test_change_password_endpoint_and_relogin(client):
 
     new_login = client.post("/login_account", json={"user_id": "ihsan", "password": "5678"})
     assert new_login.status_code == 200
+
+def test_statements_reflect_deposit_and_transfer(client):
+    sender_token = _login_and_get_token(client, "ihsan", "1234")
+    client.post("/create_account", json={
+        "user_id": "jalal",
+        "user_name": "M. Jalal",
+        "password": "5678"
+    })
+
+    client.post("/deposit", json={"amount": 1000}, headers={"Authorization": f"Bearer {sender_token}"})
+
+    preview = client.post(
+        "/send-money/preview",
+        json={"receiver_account_no": "AC4001", "amount": 300},
+        headers={"Authorization": f"Bearer {sender_token}"}
+    )
+    client.post(
+        "/send-money/confirm",
+        json={"transaction_id": preview.json()["transaction_id"]},
+        headers={"Authorization": f"Bearer {sender_token}"}
+    )
+
+    statements = client.get("/statements", headers={"Authorization": f"Bearer {sender_token}"})
+    assert statements.status_code == 200
+    transactions = statements.json()["transactions"]
+    types = {t["type"] for t in transactions}
+    assert types == {"deposit", "transfer_out"}
+
+def test_mini_statements_returns_at_most_five(client):
+    token = _login_and_get_token(client)
+
+    for _ in range(7):
+        client.post("/deposit", json={"amount": 100}, headers={"Authorization": f"Bearer {token}"})
+
+    response = client.get("/mini-statements", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert len(response.json()["transactions"]) == 5
