@@ -1,10 +1,11 @@
 from logger_setup import logger
 
 class TransactionManager:
-    def __init__(self, transaction_repo, account_repo, statement_repo):
+    def __init__(self, transaction_repo, account_repo, statement_repo, admin_repo):
         self.transaction_repo = transaction_repo
         self.account_repo = account_repo
         self.statement_repo = statement_repo
+        self.admin_repo = admin_repo
 
     def check_balance(self, user_id, password):
         account = self.account_repo.check_account_exists(user_id, password)

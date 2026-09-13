@@ -1,0 +1,23 @@
+{
+    "admins": [
+        {
+            "username": "admin1",
+            "password": "$2b$12$DbVJ4cysX.Y/mSrYPhtp5.BgYPOBvbbqQ3llV1HPdhVCbBI/NQYWO",
+            "permissions": []
+        },
+        {
+            "username": "Ihsan",
+            "password": "$2b$12$cafP3xK3oRknaHN1u8RNJ.4kaPhUvVFLbr8Gp1nHXmPailBqFFB2O",
+            "permissions": [
+                "freeze_account"
+            ]
+        },
+        {
+            "username": "Ihsan2",
+            "password": "$2b$12$AeATH.rOlrbGoVZDuNzTzuZvAAdkzXVDqKsLDLUg1AIgRen0nHUSu",
+            "permissions": [
+                "send_money"
+            ]
+        }
+    ]
+}

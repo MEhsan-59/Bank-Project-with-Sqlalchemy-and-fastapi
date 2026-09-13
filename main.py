@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -19,15 +22,28 @@ from transaction_manager import TransactionManager
 from transaction_repository import TransactionRepository
 from statement_manager import Statement
 from statement_repository import StatmentRepository
-
+from admin_manager import AdminManager
+from admin_repository import AdminRepository
 app = FastAPI(title="Bank Manager API", version="6.0")
 security_scheme = HTTPBearer()
 pending_transfers = {}
 
+BASE_DIR = Path(__file__).resolve().parent
+ADMIN_FILE_NAME = os.getenv("ADMIN_FILE_NAME", "admin.json")
+ADMIN_FILE_PATH = str(BASE_DIR / ADMIN_FILE_NAME)
+
+
+admin = False
+
+def get_admin_manager(db: Session = Depends(get_db)) -> AdminManager:
+    repo = AdminRepository(ADMIN_FILE_PATH, db)
+    return AdminManager(repo)
+
 
 def get_account_manager(db: Session = Depends(get_db)) -> AccountManager:
     repo = AccountRepository(db)
-    return AccountManager(repo)
+    admin_repo = AdminRepository(ADMIN_FILE_PATH)
+    return AccountManager(repo, admin_repo)
 
 
 def get_statement_manager(db: Session = Depends(get_db)) -> Statement:
@@ -38,7 +54,7 @@ def get_statement_manager(db: Session = Depends(get_db)) -> Statement:
 def get_transaction_manager(db: Session = Depends(get_db)) -> TransactionManager:
     transaction_repo = TransactionRepository(db)
     account_repo = AccountRepository(db)
-    return TransactionManager(transaction_repo, account_repo, get_statement_manager(db))
+    return TransactionManager(transaction_repo, account_repo, get_statement_manager(db), get_admin_manager(db).admin_repo)
 
 
 def get_current_user(
@@ -58,18 +74,40 @@ def get_current_user(
     return account
 
 
+def get_current_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    payload = decode_access_token(credentials.credentials)
+    if payload is None or payload.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return payload
+
+
 @app.post("/create_account", response_model=CreateAccountResponse)
 def create_account(data: CreateAccountSchema, manager: AccountManager = Depends(get_account_manager)):
     logger.info("API : Create account.")
     status, msg = manager.create_account(data.user_id, data.user_name, data.password)
     return CreateAccountResponse(status=status, message=msg)
 
-
 @app.post("/login_account", response_model=TokenResponse)
-def login_account(data: LoginAccountSchema, manager: AccountManager = Depends(get_account_manager)):
+def login_account(
+    data: LoginAccountSchema,
+    manager: AccountManager = Depends(get_account_manager),
+    admin_manager: AdminManager = Depends(get_admin_manager),
+):
     logger.info("API : Login Account.")
-    status, msg = manager.login_account(data.user_id, data.password)
+    admin, _ = admin_manager.check_admin(data.user_id, data.password)
 
+    if admin:
+        admin_record = admin_manager.admin_repo.get_admin_by_username(data.user_id)
+        token = create_access_token(
+            data.user_id,
+            role="admin",
+            extra_claims={"permissions": admin_record["permissions"]}
+        )
+        return {"access_token": token, "token_type": "bearer"}
+
+    status, msg = manager.login_account(data.user_id, data.password)
     if not status:
         logger.warning(msg)
         raise HTTPException(status_code=401, detail=msg)
@@ -80,6 +118,7 @@ def login_account(data: LoginAccountSchema, manager: AccountManager = Depends(ge
 
 @app.get("/me", response_model=ProfileResponse)
 def get_profile(current_user=Depends(get_current_user)):
+    print(admin)
     return {
         "message": f"Welcome, {current_user.user_name}!",
         "account_no": current_user.account_no,
@@ -115,9 +154,13 @@ def deposit(
 def send_money_preview(
     data: SendMoneySchema,
     current_user=Depends(get_current_user),
-    manager: AccountManager = Depends(get_account_manager)
+    manager: AccountManager = Depends(get_account_manager),
+    admin_manager: AdminManager = Depends(get_admin_manager)
 ):
     logger.info("API : Send Money Preview")
+    if admin_manager.admin_repo.check_is_frozen(current_user.account_no):
+        logger.warning("Your account is frozen. Please contact the admin.")
+        raise HTTPException(status_code=403, detail="Your account is frozen. Please contact the admin.")
     receiver = manager.account_repo.get_account_by_account_no(data.receiver_account_no)
     if not receiver:
         logger.warning("Receiver account not found.")
@@ -200,3 +243,28 @@ def get_mini_statements(
     logger.info(f"API : Get mini statements for user {current_user.user_id}")
     history = get_statement_manager.get_top_5_history(current_user.account_no)
     return {"transactions": history}
+
+@app.get("/admin/statements/{account_no}", response_model=StatementResponse)
+def show_user_history_for_admin(
+    account_no: str,
+    statement_manager: Statement = Depends(get_statement_manager),
+    current_admin=Depends(get_current_admin),
+):
+    logger.info(f"API : Admin fetching history for account {account_no}")
+    history = statement_manager.get_history(account_no)
+    return {"transactions": history}
+
+
+@app.post("/admin/freeze_account/{account_id}")
+def freeze_account_for_admin(
+    account_id: str,
+    admin_manager: AdminManager = Depends(get_admin_manager),
+    current_admin=Depends(get_current_admin),
+):
+
+    logger.info(f"API : Admin freezing account {account_id}")
+    success, message = admin_manager.freeze_account(account_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Account not found or already frozen")
+
+    return {"success": True, "message": message}

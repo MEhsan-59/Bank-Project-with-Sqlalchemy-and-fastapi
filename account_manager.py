@@ -3,14 +3,19 @@ import security
 
 class AccountManager:
 
-    def __init__(self, account_repo):
+    def __init__(self, account_repo, admin_repo):
         self.account_repo = account_repo
+        self.admin_repo = admin_repo
 
     def create_account(self, user_id, user_name, password):
 
         if self.account_repo.check_account_exists(user_id, skip_password_check=True):
             logger.warning("Account already exists.")
             return False, "Account already exists."
+
+        if self.admin_repo.username_exists(user_id):
+            logger.warning("This user_id is reserved for admin.")
+            return False, "This user_id is not allowed."
 
         account = self.account_repo.create_account(
             user_id,
@@ -30,7 +35,11 @@ class AccountManager:
         if not account:
             logger.warning("Account not exists.")
             return False, "Account not exists."
-
+        admin = self.admin_repo.check_admin(user_id, password)
+        if admin:
+            logger.warning("Admin login successfully.")
+            return True, "Admin login successfully."
+                
         logger.info("Account login successfully.")
         return True, "Account login successfully."
 

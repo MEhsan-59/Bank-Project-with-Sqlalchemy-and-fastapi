@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, func
+from sqlalchemy import Column, Integer, String, DateTime, func, Boolean
 from sqlalchemy.orm import declarative_base
 from config import Config
 
@@ -13,6 +13,7 @@ class Account(Base):
     password = Column(String, nullable=False)
     account_no = Column(String, nullable=False, unique=True, index=True)
     balance = Column(Integer, nullable=False, default=Config.DEFAULT_BALANCE)
+    freeze = Column(Boolean, nullable=False, default=0)  
 
 class Transaction(Base):
     __tablename__ = "transactions"
