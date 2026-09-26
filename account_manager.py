@@ -33,8 +33,8 @@ class AccountManager:
     def login_account(self, user_id, password):
         account = self.account_repo.check_account_exists(user_id, password)
         if not account:
-            logger.warning("Account not exists.")
-            return False, "Account not exists."
+            logger.warning("Invalid user_id or password")
+            return False, "Invalid user_id or password"
         admin = self.admin_repo.check_admin(user_id, password)
         if admin:
             logger.warning("Admin login successfully.")

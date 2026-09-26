@@ -28,7 +28,7 @@ def test_deposit_amount_too_large(transaction_manager, account_repo):
     status, msg, new_balance = transaction_manager.deposit(account.account_no, account.balance, 20000, "ihsan")
 
     assert status is False
-    assert msg == "amount must be less than Total Balance."
+    assert msg == "amount must be less than 10000."
     assert new_balance is None
 
 def test_deposit_amount_must_be_positive(transaction_manager, account_repo):

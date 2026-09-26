@@ -74,3 +74,9 @@ def test_change_password_mismatch_confirm(account_manager):
 
     assert status is False
     assert msg == "New password and confirm password do not match."
+    
+def test_create_duplicate_account_returns_409(client):
+    body = {"user_id": "ihsan", "user_name": "M. Ihsan", "password": "1234"}
+    client.post("/create_account", json=body)
+    response = client.post("/create_account", json=body)
+    assert response.status_code == 409

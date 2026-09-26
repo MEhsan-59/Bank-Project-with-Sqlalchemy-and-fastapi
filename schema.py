@@ -34,8 +34,8 @@ class DepositResponse(BaseModel):
     message: str
     balance: float
 
-class DepositSechema(BaseModel):
-    amount: int
+class DepositSchema(BaseModel):
+    amount: int = Field(..., gt=0, le=10000)
 
 class SendMoneySchema(BaseModel):
     receiver_account_no: str = Field(..., min_length=6)

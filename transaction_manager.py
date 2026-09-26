@@ -19,17 +19,17 @@ class TransactionManager:
 
     def deposit(self, account_no, balance, amount, user_id):
         if amount > 10000:
-            logger.warning("amount must be less than Total Balance.")
-            return False, "amount must be less than Total Balance.", None
+            logger.warning("amount must be less than 10000.")
+            return False, "amount must be less than 10000.", None
 
         if amount <= 0:
-            logger.warning("Amount must be grater than 0.")
-            return False, "Amount must be grater than 0.", None
+            logger.warning("Amount must be greater than 0.")
+            return False, "Amount must be greater than 0.", None
 
         self.transaction_repo.update_balance(amount, user_id)
         self.statement_repo.log_deposit(account_no, amount, balance + amount)
-        logger.info(f"{amount} successfuly deposited Your total amount is {balance+amount}.")
-        return True, f"{amount} successfuly deposited Your total amount is {balance+amount}.", balance + amount
+        logger.info(f"{amount} successfully deposited Your total amount is {balance+amount}.")
+        return True, f"{amount} successfully deposited Your total amount is {balance+amount}.", balance + amount
 
     def send_money(self, current_user, receiver_account_no, amount):
         sender = self.account_repo.check_account_exists(current_user.user_id, current_user.password, True)

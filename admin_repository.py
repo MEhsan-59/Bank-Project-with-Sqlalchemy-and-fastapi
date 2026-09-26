@@ -28,8 +28,8 @@ class AdminRepository:
                 return None
         return None
 
-    def freeze_account(self, account_id: str):
-        account = self.db.query(Account).filter(Account.account_no == account_id).first()
+    def freeze_account(self, account_no: str):
+        account = self.db.query(Account).filter(Account.account_no == account_no).first()
         if account:
             account.freeze = True
             self.db.commit()

@@ -9,7 +9,7 @@ from logger_setup import logger
 from schema import (
     CreateAccountResponse, CreateAccountSchema,
     LoginAccountSchema, TokenResponse, ProfileResponse,
-    CheckBalanceResponse, DepositSechema, DepositResponse,
+    CheckBalanceResponse, DepositSchema, DepositResponse,
     SendMoneySchema, SendMoneyPreviewResponse, ConfirmTransferSchema,
     Change_password_Schema, ChangePasswordResponse,
     TransactionItem, StatementResponse
@@ -82,12 +82,18 @@ def get_current_admin(
         raise HTTPException(status_code=403, detail="Admin access required")
     return payload
 
-
 @app.post("/create_account", response_model=CreateAccountResponse)
 def create_account(data: CreateAccountSchema, manager: AccountManager = Depends(get_account_manager)):
     logger.info("API : Create account.")
     status, msg = manager.create_account(data.user_id, data.user_name, data.password)
-    return CreateAccountResponse(status=status, message=msg)
+
+    if not status:
+        logger.warning(msg)
+        if msg == "Account already exists.":
+            raise HTTPException(status_code=409, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+    return CreateAccountResponse(status=True, message=msg)
 
 @app.post("/login_account", response_model=TokenResponse)
 def login_account(
@@ -118,7 +124,6 @@ def login_account(
 
 @app.get("/me", response_model=ProfileResponse)
 def get_profile(current_user=Depends(get_current_user)):
-    print(admin)
     return {
         "message": f"Welcome, {current_user.user_name}!",
         "account_no": current_user.account_no,
@@ -136,7 +141,7 @@ def check_balance(
 
 @app.post("/deposit", response_model=DepositResponse)
 def deposit(
-    data: DepositSechema,
+    data: DepositSchema,
     current_user=Depends(get_current_user),
     transaction_manager: TransactionManager = Depends(get_transaction_manager)
 ):
@@ -150,7 +155,7 @@ def deposit(
     return {"success": status, "message": message, "balance": new_balance}
 
 
-@app.post("/send-money/preview", response_model=SendMoneyPreviewResponse)
+@app.post("/send_money/preview", response_model=SendMoneyPreviewResponse)
 def send_money_preview(
     data: SendMoneySchema,
     current_user=Depends(get_current_user),
@@ -184,7 +189,7 @@ def send_money_preview(
     }
 
 
-@app.post("/send-money/confirm")
+@app.post("/send_money/confirm")
 def send_money_confirm(
     data: ConfirmTransferSchema,
     current_user=Depends(get_current_user),
@@ -224,7 +229,11 @@ def change_password(
         data.new_password,
         data.confirm_password
     )
-    return {"success": status, "message": message}
+    if not status:
+        logger.warning(message)
+        raise HTTPException(status_code=400, detail=message)
+
+    return {"success": True, "message": message}
 
 @app.get("/statements", response_model=StatementResponse)
 def get_statements(
@@ -235,7 +244,7 @@ def get_statements(
     history = get_statement_manager.get_history(current_user.account_no)
     return {"transactions": history}
 
-@app.get("/mini-statements", response_model=StatementResponse)
+@app.get("/mini_statements", response_model=StatementResponse)
 def get_mini_statements(
     current_user=Depends(get_current_user),
     get_statement_manager: Statement = Depends(get_statement_manager)):
@@ -255,15 +264,14 @@ def show_user_history_for_admin(
     return {"transactions": history}
 
 
-@app.post("/admin/freeze_account/{account_id}")
+@app.post("/admin/freeze_account/{account_no}")
 def freeze_account_for_admin(
-    account_id: str,
+    account_no: str,
     admin_manager: AdminManager = Depends(get_admin_manager),
     current_admin=Depends(get_current_admin),
 ):
-
-    logger.info(f"API : Admin freezing account {account_id}")
-    success, message = admin_manager.freeze_account(account_id)
+    logger.info(f"API : Admin freezing account {account_no}")
+    success, message = admin_manager.freeze_account(account_no)
     if not success:
         raise HTTPException(status_code=404, detail="Account not found or already frozen")
 
