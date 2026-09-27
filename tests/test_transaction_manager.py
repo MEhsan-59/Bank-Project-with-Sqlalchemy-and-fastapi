@@ -37,7 +37,7 @@ def test_deposit_amount_must_be_positive(transaction_manager, account_repo):
     status, msg, new_balance = transaction_manager.deposit(account.account_no, account.balance, 0, "ihsan")
 
     assert status is False
-    assert msg == "Amount must be grater than 0."
+    assert msg == "Amount must be greater than 0."
     assert new_balance is None
 
 def test_deposit_updates_account_balance(transaction_manager, account_repo):

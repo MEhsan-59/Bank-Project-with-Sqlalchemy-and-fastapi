@@ -36,8 +36,8 @@ class AdminRepository:
             return True
         return False
 
-    def check_is_frozen(self, account_id: str):
-        account = self.db.query(Account).filter(Account.account_no == account_id).first()
+    def check_is_frozen(self, account_no: str):
+        account = self.db.query(Account).filter(Account.account_no == account_no).first()
         if account:
             return account.freeze
         return False

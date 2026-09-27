@@ -20,7 +20,7 @@ from account_manager import AccountManager
 from admin_manager import AdminManager
 from admin_repository import AdminRepository
 from transaction_repository import TransactionRepository
-from statement_repository import StatmentRepository
+from statement_repository import StatementRepository
 from statement_manager import Statement
 from transaction_manager import TransactionManager
 
@@ -52,7 +52,6 @@ def admin_repo():
 def account_manager(account_repo, admin_repo):
     return AccountManager(account_repo, admin_repo)
 
-
 @pytest.fixture()
 def admin_manager(admin_repo):
     return AdminManager(admin_repo)
@@ -65,18 +64,16 @@ def transaction_repo(db_session):
 
 @pytest.fixture()
 def statement_repo(db_session):
-    return StatmentRepository(db_session)
+    return StatementRepository(db_session)
 
 
 @pytest.fixture()
 def statement_manager(statement_repo):
     return Statement(statement_repo)
 
-
 @pytest.fixture()
-def transaction_manager(transaction_repo, account_repo, statement_manager):
-    return TransactionManager(transaction_repo, account_repo, statement_manager)
-
+def transaction_manager(transaction_repo, account_repo, statement_manager, admin_repo):
+    return TransactionManager(transaction_repo, account_repo, statement_manager, admin_repo)
 
 @pytest.fixture()
 def client(db_session):

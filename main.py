@@ -21,7 +21,7 @@ from auth import decode_access_token, create_access_token
 from transaction_manager import TransactionManager
 from transaction_repository import TransactionRepository
 from statement_manager import Statement
-from statement_repository import StatmentRepository
+from statement_repository import StatementRepository
 from admin_manager import AdminManager
 from admin_repository import AdminRepository
 app = FastAPI(title="Bank Manager API", version="6.0")
@@ -47,7 +47,7 @@ def get_account_manager(db: Session = Depends(get_db)) -> AccountManager:
 
 
 def get_statement_manager(db: Session = Depends(get_db)) -> Statement:
-    repo = StatmentRepository(db)
+    repo = StatementRepository(db)
     return Statement(repo)
 
 
@@ -187,14 +187,11 @@ def send_money_preview(
         "amount": data.amount,
         "transaction_id": transaction_id
     }
-
-
 @app.post("/send_money/confirm")
 def send_money_confirm(
     data: ConfirmTransferSchema,
     current_user=Depends(get_current_user),
-    transaction_manager: TransactionManager = Depends(get_transaction_manager)
-):
+    transaction_manager: TransactionManager = Depends(get_transaction_manager)):
     logger.info("API : Send money confirm.")
     pending = pending_transfers.get(data.transaction_id)
 
@@ -203,7 +200,7 @@ def send_money_confirm(
         raise HTTPException(status_code=404, detail="Transaction not found or already used.")
 
     if pending["sender_user_id"] != current_user.user_id:
-        logger.warning("This transaction does belong to you.")
+        logger.warning("This transaction does not belong to you.")
         raise HTTPException(status_code=403, detail="This transaction does not belong to you.")
 
     status, message = transaction_manager.send_money(
@@ -211,30 +208,12 @@ def send_money_confirm(
         pending["receiver_account_no"],
         pending["amount"],
     )
-    del pending_transfers[data.transaction_id]
 
-    return {"success": status, "message": message}
-
-
-@app.post("/change_password", response_model=ChangePasswordResponse)
-def change_password(
-    data: Change_password_Schema,
-    current_user=Depends(get_current_user),
-    manager: AccountManager = Depends(get_account_manager)):
-    logger.info("API: Change Password")
-    status, message = manager.change_password(
-        current_user.user_id,
-        current_user.password,
-        data.old_password,
-        data.new_password,
-        data.confirm_password
-    )
     if not status:
-        logger.warning(message)
         raise HTTPException(status_code=400, detail=message)
 
-    return {"success": True, "message": message}
-
+    del pending_transfers[data.transaction_id]
+    return {"success": status, "message": message}
 @app.get("/statements", response_model=StatementResponse)
 def get_statements(
     current_user=Depends(get_current_user),

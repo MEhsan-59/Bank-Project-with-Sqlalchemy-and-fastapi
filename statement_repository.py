@@ -1,7 +1,7 @@
 from models import Transaction
 from sqlalchemy.orm import Session
 
-class StatmentRepository:
+class StatementRepository:
     def __init__(self, db=Session):
         self.db = db
 
@@ -18,13 +18,15 @@ class StatmentRepository:
         self.db.refresh(transaction)
         return transaction
 
-    def get_history(self, account_no):
-        return (
+    def get_history(self, account_no, limit=None):
+        q = (
             self.db.query(Transaction)
             .filter(Transaction.account_no == account_no)
             .order_by(Transaction.id.desc())
-            .all()
         )
+        if limit is not None:
+            q = q.limit(limit)
+        return q.all()
 
     def get_top_5_history(self, account_no, limit=5):
         return self.get_history(account_no, limit=limit)
