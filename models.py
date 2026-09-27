@@ -25,3 +25,12 @@ class Transaction(Base):
     balance_after = Column(Integer, nullable=False)
     related_account = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=False), server_default=func.now())
+
+class Pending_transfer(Base):
+    __tablename__ = "Pendeing_transfer"
+    id = Column(Integer, primary_key=True, nullable=False)
+    transfer_id = Column(String, nullable=False, unique=True, index=True)
+    sender_user_id = Column(String, nullable=False)
+    receiver_account_no = Column(String, nullable=False)
+    amount = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=False), server_default=func.now())

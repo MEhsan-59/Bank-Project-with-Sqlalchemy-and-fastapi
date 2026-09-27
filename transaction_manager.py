@@ -62,3 +62,12 @@ class TransactionManager:
 
         logger.info("Money transfered successfully.")
         return True, "Money transferred successfully."
+
+    def add_pendeing_transfer(self, transfer_id, sender_account_no, receiver_account_no, amount):
+        self.transaction_repo.add_pendeing_transfer(transfer_id, sender_account_no, receiver_account_no, amount)
+
+    def view_pendieng_transfer(self, transfer_id):
+        return self.transaction_repo.view_pendeing_transfer(transfer_id)
+
+    def delete_pendeing_transfer(self, transfer_id):
+        return self.transaction_repo.delete_pendeing_transfer(transfer_id)

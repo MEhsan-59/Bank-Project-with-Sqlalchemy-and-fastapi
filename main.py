@@ -154,14 +154,13 @@ def deposit(
 
     return {"success": status, "message": message, "balance": new_balance}
 
-
 @app.post("/send_money/preview", response_model=SendMoneyPreviewResponse)
 def send_money_preview(
     data: SendMoneySchema,
     current_user=Depends(get_current_user),
     manager: AccountManager = Depends(get_account_manager),
-    admin_manager: AdminManager = Depends(get_admin_manager)
-):
+    admin_manager: AdminManager = Depends(get_admin_manager),
+    transaction_manager: TransactionManager = Depends(get_transaction_manager)):
     logger.info("API : Send Money Preview")
     if admin_manager.admin_repo.check_is_frozen(current_user.account_no):
         logger.warning("Your account is frozen. Please contact the admin.")
@@ -175,11 +174,8 @@ def send_money_preview(
         raise HTTPException(status_code=400, detail="Insufficient balance.")
 
     transaction_id = str(uuid.uuid4())
-    pending_transfers[transaction_id] = {
-        "sender_user_id": current_user.user_id,
-        "receiver_account_no": data.receiver_account_no,
-        "amount": data.amount
-    }
+    
+    transaction_manager.add_pendeing_transfer(transaction_id, current_user.user_id, data.receiver_account_no, data.amount)
 
     return {
         "receiver_account_no": receiver.account_no,
@@ -193,26 +189,26 @@ def send_money_confirm(
     current_user=Depends(get_current_user),
     transaction_manager: TransactionManager = Depends(get_transaction_manager)):
     logger.info("API : Send money confirm.")
-    pending = pending_transfers.get(data.transaction_id)
+    pending = transaction_manager.view_pendieng_transfer(data.transaction_id)
 
     if not pending:
         logger.warning("Transaction id not found or already used.")
         raise HTTPException(status_code=404, detail="Transaction not found or already used.")
 
-    if pending["sender_user_id"] != current_user.user_id:
+    if pending.sender_user_id != current_user.user_id:
         logger.warning("This transaction does not belong to you.")
         raise HTTPException(status_code=403, detail="This transaction does not belong to you.")
 
     status, message = transaction_manager.send_money(
         current_user,
-        pending["receiver_account_no"],
-        pending["amount"],
+        pending.receiver_account_no,
+        pending.amount,
     )
-
+    transaction_manager.delete_pendeing_transfer(pending.transfer_id)
     if not status:
         raise HTTPException(status_code=400, detail=message)
 
-    del pending_transfers[data.transaction_id]
+    
     return {"success": status, "message": message}
 @app.get("/statements", response_model=StatementResponse)
 def get_statements(
