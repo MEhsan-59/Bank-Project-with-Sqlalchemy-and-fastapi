@@ -1,4 +1,4 @@
-from models import Account, Pending_transfer
+from models import Account, PendingTransfer
 from sqlalchemy.orm import Session
 
 class TransactionRepository:
@@ -22,19 +22,19 @@ class TransactionRepository:
             receiver.balance += amount
             self.db.commit()
 
-    def add_pendeing_transfer(self, transfer_id, sender_user_id, receiver_account_no, amount):
-        transfer = Pending_transfer(transfer_id=transfer_id, sender_user_id=sender_user_id, receiver_account_no=receiver_account_no, amount=amount)
+    def add_pending_transfer(self, transfer_id, sender_user_id, receiver_account_no, amount):
+        transfer = PendingTransfer(transfer_id=transfer_id, sender_user_id=sender_user_id, receiver_account_no=receiver_account_no, amount=amount)
         self.db.add(transfer)
         self.db.commit()
         self.db.refresh(transfer)
         return transfer
 
-    def view_pendeing_transfer(self, transfer_id):
-        transfer = self.db.query(Pending_transfer).filter(Pending_transfer.transfer_id == transfer_id).first()
+    def view_pending_transfer(self, transfer_id):
+        transfer = self.db.query(PendingTransfer).filter(PendingTransfer.transfer_id == transfer_id).first()
         return transfer
 
-    def delete_pendeing_transfer(self, transfer_id):
-        transfer = self.db.query(Pending_transfer).filter(Pending_transfer.transfer_id == transfer_id).first()
+    def delete_pending_transfer(self, transfer_id):
+        transfer = self.db.query(PendingTransfer).filter(PendingTransfer.transfer_id == transfer_id).first()
         if transfer:
             self.db.delete(transfer)
             self.db.commit()

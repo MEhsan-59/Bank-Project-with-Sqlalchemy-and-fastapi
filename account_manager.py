@@ -25,7 +25,7 @@ class AccountManager:
 
         if account:
             logger.info("Account Successfully created.")
-            return True, "Account Successfully created."
+            return True, f"Account Successfully created Your account_no is {account.account_no}."
 
         logger.warning("Account creation failed.")
         return False, "Account creation failed."

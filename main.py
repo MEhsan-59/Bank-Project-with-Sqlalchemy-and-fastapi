@@ -26,7 +26,6 @@ from admin_manager import AdminManager
 from admin_repository import AdminRepository
 app = FastAPI(title="Bank Manager API", version="6.0")
 security_scheme = HTTPBearer()
-pending_transfers = {}
 
 BASE_DIR = Path(__file__).resolve().parent
 ADMIN_FILE_NAME = os.getenv("ADMIN_FILE_NAME", "admin.json")
@@ -175,7 +174,7 @@ def send_money_preview(
 
     transaction_id = str(uuid.uuid4())
     
-    transaction_manager.add_pendeing_transfer(transaction_id, current_user.user_id, data.receiver_account_no, data.amount)
+    transaction_manager.add_pending_transfer(transaction_id, current_user.user_id, data.receiver_account_no, data.amount)
 
     return {
         "receiver_account_no": receiver.account_no,
@@ -187,8 +186,13 @@ def send_money_preview(
 def send_money_confirm(
     data: ConfirmTransferSchema,
     current_user=Depends(get_current_user),
+    admin_manager: AdminManager = Depends(get_admin_manager),
     transaction_manager: TransactionManager = Depends(get_transaction_manager)):
     logger.info("API : Send money confirm.")
+    if admin_manager.admin_repo.check_is_frozen(current_user.account_no):
+        logger.warning("Your account is frozen. Please contact the admin.")
+        raise HTTPException(status_code=403, detail="Your account is frozen. Please contact the admin.")
+        
     pending = transaction_manager.view_pendieng_transfer(data.transaction_id)
 
     if not pending:
@@ -200,16 +204,38 @@ def send_money_confirm(
         raise HTTPException(status_code=403, detail="This transaction does not belong to you.")
 
     status, message = transaction_manager.send_money(
-        current_user,
-        pending.receiver_account_no,
-        pending.amount,
+    current_user,
+    pending.receiver_account_no,
+    pending.amount,
     )
-    transaction_manager.delete_pendeing_transfer(pending.transfer_id)
     if not status:
         raise HTTPException(status_code=400, detail=message)
 
-    
-    return {"success": status, "message": message}
+    transaction_manager.delete_pending_transfer(pending.transfer_id)
+    return {"success": True, "message": message}
+
+@app.post("/change_password", response_model=ChangePasswordResponse)
+def change_password(
+    data: Change_password_Schema,
+    current_user=Depends(get_current_user),
+    manager: AccountManager = Depends(get_account_manager),
+):
+    logger.info("API : Change Password.")
+
+    status, msg = manager.change_password(
+        current_user.user_id,
+        current_user.password,
+        data.old_password,
+        data.new_password,
+        data.confirm_password,
+    )
+
+    if not status:
+        logger.warning(msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+    return ChangePasswordResponse(success=True, message=msg)
+
 @app.get("/statements", response_model=StatementResponse)
 def get_statements(
     current_user=Depends(get_current_user),

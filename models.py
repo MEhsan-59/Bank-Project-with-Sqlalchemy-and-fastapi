@@ -26,8 +26,8 @@ class Transaction(Base):
     related_account = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=False), server_default=func.now())
 
-class Pending_transfer(Base):
-    __tablename__ = "Pendeing_transfer"
+class PendingTransfer(Base):
+    __tablename__ = "PendingTransfer"
     id = Column(Integer, primary_key=True, nullable=False)
     transfer_id = Column(String, nullable=False, unique=True, index=True)
     sender_user_id = Column(String, nullable=False)

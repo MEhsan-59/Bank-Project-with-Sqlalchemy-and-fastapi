@@ -25,9 +25,9 @@ class TransactionManager:
         if amount <= 0:
             logger.warning("Amount must be greater than 0.")
             return False, "Amount must be greater than 0.", None
-
         self.transaction_repo.update_balance(amount, user_id)
-        self.statement_repo.log_deposit(account_no, amount, balance + amount)
+        account = self.account_repo.get_account_by_id(user_id)
+        self.statement_repo.log_deposit(account_no, amount, account.balance)
         logger.info(f"{amount} successfully deposited Your total amount is {balance+amount}.")
         return True, f"{amount} successfully deposited Your total amount is {balance+amount}.", balance + amount
 
@@ -63,11 +63,11 @@ class TransactionManager:
         logger.info("Money transfered successfully.")
         return True, "Money transferred successfully."
 
-    def add_pendeing_transfer(self, transfer_id, sender_account_no, receiver_account_no, amount):
-        self.transaction_repo.add_pendeing_transfer(transfer_id, sender_account_no, receiver_account_no, amount)
+    def add_pending_transfer(self, transfer_id, sender_user_id, receiver_account_no, amount):
+        self.transaction_repo.add_pending_transfer(transfer_id, sender_user_id, receiver_account_no, amount)
 
     def view_pendieng_transfer(self, transfer_id):
-        return self.transaction_repo.view_pendeing_transfer(transfer_id)
+        return self.transaction_repo.view_pendieng_transfer(transfer_id)
 
-    def delete_pendeing_transfer(self, transfer_id):
-        return self.transaction_repo.delete_pendeing_transfer(transfer_id)
+    def delete_pending_transfer(self, transfer_id):
+        return self.transaction_repo.delete_pendieng_transfer(transfer_id)
