@@ -37,15 +37,19 @@ def db_session():
         session.close()
         engine.dispose()
 
+@pytest.fixture()
+def admin_repo(tmp_path):
+    import json
+    from security import SecurityHelper
+    data = {"admins": [{"username": "hi", "password": SecurityHelper.hash_password("h1"),
+                        "permissions": ["freeze_account"]}]}
+    admin_file = tmp_path / "admin_test.json"
+    admin_file.write_text(json.dumps(data))
+    return AdminRepository(str(admin_file))
 
 @pytest.fixture()
 def account_repo(db_session):
     return AccountRepository(db_session)
-
-
-@pytest.fixture()
-def admin_repo():
-    return AdminRepository(os.path.join(os.path.dirname(__file__), "..", "admin.json"))
 
 
 @pytest.fixture()
@@ -74,6 +78,7 @@ def statement_manager(statement_repo):
 @pytest.fixture()
 def transaction_manager(transaction_repo, account_repo, statement_manager, admin_repo):
     return TransactionManager(transaction_repo, account_repo, statement_manager, admin_repo)
+
 
 @pytest.fixture()
 def client(db_session):

@@ -28,8 +28,8 @@ class TransactionManager:
         self.transaction_repo.update_balance(amount, user_id)
         account = self.account_repo.get_account_by_id(user_id)
         self.statement_repo.log_deposit(account_no, amount, account.balance)
-        logger.info(f"{amount} successfully deposited Your total amount is {balance+amount}.")
-        return True, f"{amount} successfully deposited Your total amount is {balance+amount}.", balance + amount
+        logger.info(f"{amount} successfully deposited Your total amount is {account.balance}.")
+        return True, f"{amount} successfully deposited Your total amount is {account.balance}.", account.balance
 
     def send_money(self, current_user, receiver_account_no, amount):
         sender = self.account_repo.check_account_exists(current_user.user_id, current_user.password, True)
@@ -66,8 +66,8 @@ class TransactionManager:
     def add_pending_transfer(self, transfer_id, sender_user_id, receiver_account_no, amount):
         self.transaction_repo.add_pending_transfer(transfer_id, sender_user_id, receiver_account_no, amount)
 
-    def view_pendieng_transfer(self, transfer_id):
-        return self.transaction_repo.view_pendieng_transfer(transfer_id)
+    def view_pending_transfer(self, transfer_id):
+        return self.transaction_repo.view_pending_transfer(transfer_id)
 
     def delete_pending_transfer(self, transfer_id):
-        return self.transaction_repo.delete_pendieng_transfer(transfer_id)
+        return self.transaction_repo.delete_pending_transfer(transfer_id)

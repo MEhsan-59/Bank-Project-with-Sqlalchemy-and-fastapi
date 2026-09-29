@@ -272,6 +272,7 @@ def freeze_account_for_admin(
     current_admin=Depends(get_current_admin),
 ):
     logger.info(f"API : Admin freezing account {account_no}")
+    
     success, message = admin_manager.freeze_account(account_no)
     if not success:
         raise HTTPException(status_code=404, detail="Account not found or already frozen")

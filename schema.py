@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
+from decimal import Decimal
 
 class CreateAccountSchema(BaseModel):
-    user_id: str
-    user_name: str
-    password: str
+    user_id: str = Field(..., min_length=3, max_length=30)
+    user_name: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=8, max_length=72)
 
 class CreateAccountResponse(BaseModel):
     status: bool
@@ -34,13 +35,6 @@ class DepositResponse(BaseModel):
     message: str
     balance: float
 
-class DepositSchema(BaseModel):
-    amount: int = Field(..., gt=0, le=10000)
-
-class SendMoneySchema(BaseModel):
-    receiver_account_no: str = Field(..., min_length=6)
-    amount: int = Field(..., gt=0)
-
 class SendMoneyPreviewResponse(BaseModel):
     receiver_account_no: str
     receiver_name: str
@@ -59,14 +53,20 @@ class ChangePasswordResponse(BaseModel):
     success: bool
     message: str
 
-class TransactionItem(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    type: str
-    amount: float
-    balance_after: float
-    related_account: Optional[str] = None
-    created_at: datetime
 
 class StatementResponse(BaseModel):
     transactions: List[TransactionItem]
+
+class DepositSchema(BaseModel):
+    amount: Decimal = Field(..., gt=0, le=10000) 
+
+class SendMoneySchema(BaseModel):
+    receiver_account_no: str = Field(..., min_length=6)
+    amount: Decimal = Field(..., gt=0)           
+
+class TransactionItem(BaseModel):
+    type: str
+    amount: Decimal    
+    balance_after: Decimal
+    related_account: Optional[str] = None
+    created_at: datetime

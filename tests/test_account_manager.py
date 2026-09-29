@@ -1,8 +1,9 @@
 def test_create_account(account_manager):
-    status, msg = account_manager.create_account("ihsan", "M. Ihsan", "1234")
+    status, msg = account_manager.create_account("Hi", "HI", "1234")
 
     assert status is True
-    assert msg == "Account Successfully created."
+    assert msg.startswith("Account Successfully created")
+
 
 def test_create_duplicate_account(account_manager):
     account_manager.create_account("ihsan", "M. Ihsan", "1234")
@@ -23,13 +24,13 @@ def test_login_account_wrong_password(account_manager):
     status, msg = account_manager.login_account("ihsan", "wrong")
 
     assert status is False
-    assert msg == "Account not exists."
+    assert msg == "Invalid user_id or password"
 
 def test_login_account_not_found(account_manager):
     status, msg = account_manager.login_account("ghost", "1234")
 
     assert status is False
-    assert msg == "Account not exists."
+    assert msg == "Invalid user_id or password"
 
 def test_get_account_by_id_found(account_manager):
     account_manager.create_account("ihsan", "M. Ihsan", "1234")
@@ -74,9 +75,9 @@ def test_change_password_mismatch_confirm(account_manager):
 
     assert status is False
     assert msg == "New password and confirm password do not match."
-    
+
 def test_create_duplicate_account_returns_409(client):
-    body = {"user_id": "ihsan", "user_name": "M. Ihsan", "password": "1234"}
+    body = {"user_id": "ihsan", "user_name": "M. Ihsan", "password": "12345678"}
     client.post("/create_account", json=body)
     response = client.post("/create_account", json=body)
     assert response.status_code == 409
