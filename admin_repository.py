@@ -36,6 +36,14 @@ class AdminRepository:
             return True
         return False
 
+    def unfreeze_account(self, account_no: str):
+        account = self.db.query(Account).filter(Account.account_no == account_no).first()
+        if account:
+            account.freeze = False
+            self.db.commit()
+            return True
+        return False
+
     def check_is_frozen(self, account_no: str):
         account = self.db.query(Account).filter(Account.account_no == account_no).first()
         if account:

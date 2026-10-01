@@ -32,3 +32,17 @@ class AdminManager:
         else:
             logger.warning("No account found with ID: %s", account_id)
             return False, "No account found with the provided ID."
+
+    def unfreeze_account(self, account_id):
+        logger.info("Unfreezing account with ID: %s", account_id)
+        if not account_id.strip():
+            logger.warning("Account ID cannot be empty.")
+            return False, "Account ID cannot be empty."
+
+        success = self.admin_repo.unfreeze_account(account_id)
+        if success:
+            logger.info("Account with ID %s has been unfrozen.", account_id)
+            return True, "Account has been unfrozen successfully."
+        else:
+            logger.warning("No account found with ID: %s", account_id)
+            return False, "No account found with the provided ID."

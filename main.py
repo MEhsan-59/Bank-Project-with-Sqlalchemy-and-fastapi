@@ -278,3 +278,18 @@ def freeze_account_for_admin(
         raise HTTPException(status_code=404, detail="Account not found or already frozen")
 
     return {"success": True, "message": message}
+
+
+@app.post("/admin/unfreeze_account/{account_no}")
+def unfreeze_account_for_admin(
+    account_no: str,
+    admin_manager: AdminManager = Depends(get_admin_manager),
+    current_admin=Depends(get_current_admin),
+):
+    logger.info(f"API : Admin unfreezing account {account_no}")
+
+    success, message = admin_manager.unfreeze_account(account_no)
+    if not success:
+        raise HTTPException(status_code=404, detail="Account not found or not frozen")
+    return {"success": True, "message": message}
+
